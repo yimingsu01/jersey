@@ -56,7 +56,7 @@ public class LinkingTest extends JerseyTest {
 
         String order = response.readEntity(String.class);
 
-        // Order of JSON (links) elements is not guaranteed... I wonder how many flaky tests are because of this.
+        // Order of JSON (links) elements is not guaranteed.
         // Attempting to sort the elements from order and the expected str below
         JSONObject orderJSON = new JSONObject(order);
         JSONArray linkJSON = orderJSON.getJSONArray("links");
@@ -83,7 +83,8 @@ public class LinkingTest extends JerseyTest {
         orderJSON = orderJSON.put("links", listLinkJSONArray);
         order = orderJSON.toString();
 
-        // Changed the order of the expected links, now following lexicographically ascending
+        // Changed the order of the expected links, now following 
+        // lexicographically ascending
         JSONAssert.assertEquals("{id:'123',price:'1.99',links:["
                     + "{uri:'/',params:{rel:'root'},uriBuilder:{absolute:false},rel:'root',rels:['root']},"
                     + "{uri:'/orders/123',params:{rel:'self'},uriBuilder:{absolute:false},rel:'self',rels:['self']},"
