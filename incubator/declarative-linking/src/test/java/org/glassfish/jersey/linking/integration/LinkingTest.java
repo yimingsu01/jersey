@@ -25,8 +25,15 @@ import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.linking.integration.app.LinkingApplication;
 import org.glassfish.jersey.linking.integration.representations.OrderRequest;
 import org.glassfish.jersey.test.JerseyTest;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class LinkingTest extends JerseyTest {
 
@@ -48,10 +55,40 @@ public class LinkingTest extends JerseyTest {
                 .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE));
 
         String order = response.readEntity(String.class);
+
+        // Order of JSON (links) elements is not guaranteed.
+        // Attempting to sort the elements from order and the expected str below
+        JSONObject orderJSON = new JSONObject(order);
+        JSONArray linkJSON = orderJSON.getJSONArray("links");
+
+        ArrayList<JSONObject> listLinkJSON = new ArrayList<JSONObject>();
+        for (int i = 0; i < linkJSON.length(); i++) {
+            listLinkJSON.add(linkJSON.getJSONObject(i));
+        }
+
+        listLinkJSON.sort((obj1, obj2) -> {
+            String strObj1 = "";
+            String strObj2 = "";
+            try {
+                strObj1 = obj1.get("uri").toString();
+                strObj2 = obj2.get("uri").toString();
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+            return strObj1.compareTo(strObj2);
+        });
+
+        // Convert the ArrayList back into a JSON Array.
+        JSONArray listLinkJSONArray = new JSONArray(listLinkJSON);
+        orderJSON = orderJSON.put("links", listLinkJSONArray);
+        order = orderJSON.toString();
+
+        // Changed the order of the expected links, now following 
+        // lexicographically ascending
         JSONAssert.assertEquals("{id:'123',price:'1.99',links:["
+                    + "{uri:'/',params:{rel:'root'},uriBuilder:{absolute:false},rel:'root',rels:['root']},"
                     + "{uri:'/orders/123',params:{rel:'self'},uriBuilder:{absolute:false},rel:'self',rels:['self']},"
-                    + "{uri:'/payments/order/123',params:{rel:'pay'},uriBuilder:{absolute:false},rel:'pay',rels:['pay']},"
-                    + "{uri:'/',params:{rel:'root'},uriBuilder:{absolute:false},rel:'root',rels:['root']}"
+                    + "{uri:'/payments/order/123',params:{rel:'pay'},uriBuilder:{absolute:false},rel:'pay',rels:['pay']}"
                     + "]}",
                 order, true);
     }
